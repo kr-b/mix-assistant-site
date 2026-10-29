@@ -1,0 +1,1171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="An interactive guide to Mix Assistant, a Max for Live device that measures your mix in Ableton Live, tests fixes on a copy, and explains what to change.">
+<meta name="theme-color" content="#2a2a2a">
+<meta property="og:title" content="Mix Assistant for Live">
+<meta property="og:description" content="An interactive guide to Mix Assistant, a Max for Live device that measures your mix in Ableton Live, tests fixes on a copy, and explains what to change.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%232a2a2a%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%227%22%20fill%3D%22%23ffbe2e%22%2F%3E%3C%2Fsvg%3E">
+<style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } img { max-width: 100%; }</style>
+<title>Mix Assistant for Live</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the page reads like a Live set. A transport bar on top with a bar ruler and one
+   yellow playhead that follows the scroll, sections as lanes, and the real device in the hero.
+   One committed dark look, the same flat greys and single yellow as the device itself. */
+:root {
+  --bg: #161616;
+  --lane: #1b1b1b;
+  --panel: #2a2a2a;
+  --card: #1d1d1d;
+  --card-2: #232323;
+  --control: #3b3b3b;
+  --control-hover: #454545;
+  --line: #2f2f2f;
+  --text: #e6e6e6;
+  --dim: #a8a8a8;
+  --label: #7e7e7e;
+  --faint: #585858;
+  --accent: #ffbe2e;
+  --accent-soft: rgba(255, 190, 46, 0.14);
+  --accent-text: #1b1b1b;
+  --ok: #3fd69a;
+  --hot: #ff5c5c;
+  --under: #6fa8ff;
+  --font-sans: "Geist", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 4px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.6 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--panel); }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 600; letter-spacing: -0.02em; }
+p { margin: 0; }
+a { color: var(--accent); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font: 500 11px/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--label); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.example-tag { display: inline-flex; align-items: center; gap: 6px; font: 500 10.5px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--label); border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; }
+.example-tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+/* ---------- transport bar ---------- */
+.transport { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--panel); border-bottom: 1px solid #111; }
+.transport .wrap { display: flex; align-items: center; gap: 18px; height: 48px; }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; text-decoration: none; color: var(--text); }
+.brand i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.nav { display: flex; gap: 2px; margin-left: auto; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a { color: var(--dim); text-decoration: none; font-size: 13px; padding: 5px 10px; border-radius: 3px; white-space: nowrap; }
+.nav a:hover { color: var(--text); background: var(--control); }
+.nav a.on { color: var(--accent-text); background: var(--accent); }
+.ruler { position: relative; height: 18px; background: #222; border-top: 1px solid #1a1a1a; overflow: hidden; }
+.ruler .ticks { position: absolute; inset: 0; display: flex; }
+.ruler .ticks span { flex: 1; border-left: 1px solid #333; font: 9px/18px var(--font-mono); color: var(--faint); padding-left: 4px; }
+.ruler .head { position: absolute; top: 0; bottom: 0; left: 0; width: 2px; background: var(--accent); transform: translateX(0); will-change: transform; }
+.ruler .head::before { content: ""; position: absolute; top: 0; left: -4px; border: 5px solid transparent; border-top: 6px solid var(--accent); }
+
+/* ---------- hero ---------- */
+.hero { padding-block: 56px 40px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 40px; align-items: start; }
+.hero h1 { font-size: clamp(34px, 5.2vw, 58px); line-height: 1.02; letter-spacing: -0.035em; max-width: 13ch; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.lede { margin-top: 18px; max-width: 54ch; color: var(--dim); font-size: 17px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 22px; color: var(--label); font: 12px/1.4 var(--font-mono); }
+.facts span::before { content: "— "; color: var(--faint); }
+.stage { margin-top: 30px; }
+.stage-cap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.hint { color: var(--dim); font-size: 13px; }
+.hint b { color: var(--accent); font-weight: 600; }
+
+/* The device, at its real 352 x 169 size, scaled to fit */
+.dv-wrap { position: relative; width: 100%; max-width: 704px; }
+.dv-frame { position: absolute; left: 0; top: 0; width: 352px; transform-origin: 0 0; }
+.dv-title { display: flex; align-items: center; gap: 5px; height: 15px; padding: 0 5px; background: #bdbdbd; color: #141414; font: 600 8.5px/15px "Helvetica Neue", Helvetica, Arial, sans-serif; border-radius: 3px 3px 0 0; }
+.dv-title i { width: 7px; height: 7px; border-radius: 50%; background: #f7a22c; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35); }
+.dv {
+  --d-surface: #2a2a2a; --d-card: #1d1d1d; --d-card-2: #232323; --d-control: #3b3b3b; --d-control-hover: #454545;
+  width: 352px; height: 169px; display: grid; grid-template-columns: 162px 1fr; gap: 7px; padding: 6px 7px;
+  background: var(--d-surface); color: var(--text); border-radius: 0 0 3px 3px;
+  font: 9.5px/1.25 "Helvetica Neue", Helvetica, Arial, sans-serif; user-select: none;
+  box-shadow: 0 0 0 1px #0d0d0d, 0 24px 60px -20px rgba(0,0,0,0.8);
+}
+.dv .display { background: var(--d-card); border-radius: 3px; padding: 6px 8px 5px; display: flex; flex-direction: column; min-width: 0; }
+.dv .top { display: flex; justify-content: space-between; align-items: center; height: 11px; }
+.dv .label { color: var(--label); font-size: 8px; letter-spacing: 0.12em; }
+.dv .state { display: flex; align-items: center; gap: 4px; color: var(--label); font-size: 8.5px; }
+.dv .state i { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
+.dv .state.busy { color: var(--accent); }
+.dv .state.busy i { background: var(--accent); animation: blink 0.8s steps(2) infinite; }
+.dv .state.rec { color: var(--hot); }
+.dv .state.rec i { background: var(--hot); animation: blink 0.8s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0.3; } }
+.dv .big-row { display: flex; align-items: baseline; gap: 4px; margin-top: 5px; height: 28px; }
+.dv .big { font-size: 27px; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+.dv .unit { color: var(--dim); font-size: 10px; }
+.dv .verdict { margin-left: auto; align-self: center; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: 700; color: var(--accent-text); transition: background-color 0.3s; }
+.verdict.ok { background: var(--ok); } .verdict.over { background: var(--accent); } .verdict.hot { background: var(--hot); color: #fff; } .verdict.under { background: var(--under); }
+.dv .pillrow { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; height: 15px; }
+.dv .pill { padding: 1px 6px; border-radius: 8px; background: var(--d-card-2); border: 1px solid #333; color: var(--dim); font-size: 8.5px; font-variant-numeric: tabular-nums; }
+.delta { font-variant-numeric: tabular-nums; }
+.delta.ok { color: var(--ok); } .delta.over { color: var(--accent); } .delta.hot { color: var(--hot); } .delta.under { color: var(--under); }
+.dv .delta { font-size: 8.5px; }
+.dv .history { position: relative; display: flex; align-items: flex-end; gap: 1px; height: 30px; margin-top: 6px; border-bottom: 1px solid #333; }
+.dv .history b { flex: 1; min-width: 0; background: #4a4a4a; border-radius: 1px 1px 0 0; transition: height 0.4s ease; }
+.dv .history b:last-of-type { background: var(--accent); }
+.dv .tline { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--ok); opacity: 0.8; transition: bottom 0.4s ease; }
+.dv .sub { display: flex; justify-content: space-between; margin-top: auto; color: var(--label); font-size: 8.5px; font-variant-numeric: tabular-nums; }
+.dv .sub b { color: var(--dim); font-weight: 400; }
+.dv .sub b.hot { color: var(--hot); }
+.dv .side { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dv .btn { position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; height: 18px; padding: 0 5px; border: 0; border-radius: 3px; background: var(--d-control); color: var(--text); white-space: nowrap; cursor: pointer; font-size: 9.5px; }
+.dv .btn svg { width: 9px; height: 9px; flex: none; fill: currentColor; }
+.dv .btn:hover { background: var(--d-control-hover); }
+.dv .btn:disabled { color: var(--faint); background: #313131; cursor: default; }
+.dv .goalrow { display: grid; grid-template-columns: 1fr 18px; gap: 4px; }
+.dv .radio { display: grid; grid-template-columns: 1fr 1fr; background: var(--d-control); border-radius: 3px; overflow: hidden; }
+.dv .radio .btn { border-radius: 0; background: none; color: var(--dim); }
+.dv .radio .btn.on { background: var(--accent); color: var(--accent-text); }
+.dv .sq { padding: 0; }
+.dv .sq.on { background: var(--accent); color: var(--accent-text); }
+.dv .primary { height: 24px; background: var(--accent); color: var(--accent-text); font-size: 11px; font-weight: 600; }
+.dv .primary:hover { background: #ffc94f; }
+.dv .primary:disabled { background: #5b4d2c; color: #2a2a2a; }
+.dv .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+.dv .row3 .btn { font-size: 9px; }
+.dv .rec.recording { background: var(--hot); color: #fff; }
+.dv .badge { position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.dv .card { background: var(--d-card); border-radius: 3px; padding: 5px 7px; }
+.dv .insights { flex: 1; min-height: 0; overflow: hidden; color: var(--dim); font-size: 9px; }
+.dv .insights h4 { margin: 0 0 2px; font-size: 9.5px; font-weight: 600; color: var(--text); }
+.dv .insights .item { display: flex; align-items: center; gap: 5px; height: 12px; color: var(--text); animation: rise 0.35s both; }
+.dv .insights .item:nth-child(3) { animation-delay: 0.08s; } .dv .insights .item:nth-child(4) { animation-delay: 0.16s; }
+.dv .insights .item i { width: 5px; height: 5px; border-radius: 50%; flex: none; }
+.dv .insights .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dv .insights .item::after { content: "›"; margin-left: auto; color: var(--faint); }
+.dv .insights .more { color: var(--label); }
+.dv .insights p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.dot-high { background: var(--hot); } .dot-medium { background: var(--accent); } .dot-low { background: var(--under); }
+.dv .settings { position: absolute; left: 0; right: 0; top: 22px; bottom: 0; display: flex; flex-direction: column; gap: 6px; background: #202020; box-shadow: 0 0 0 1px #343434; }
+.dv .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.dv .pair span { display: flex; flex-direction: column; gap: 2px; color: var(--label); font-size: 8.5px; }
+.dv .pair em { font-style: normal; height: 18px; line-height: 18px; padding: 0 5px; border-radius: 3px; background: var(--d-control); color: var(--text); }
+.dv .toggle { justify-content: flex-start; }
+.dv .toggle::before { content: ""; width: 9px; height: 9px; border-radius: 2px; border: 1px solid var(--dim); margin-right: 2px; font-size: 8px; line-height: 9px; text-align: center; }
+.dv .toggle.on::before { content: "✓"; color: var(--accent); background: var(--accent-text); border-color: var(--accent-text); }
+.dv .done { align-self: flex-end; margin-top: auto; border: 0; background: none; color: var(--accent); cursor: pointer; font-size: 9px; padding: 0; }
+@keyframes rise { from { opacity: 0; transform: translateY(3px); } }
+
+/* Chat window */
+.chat { background: var(--panel); border-radius: 8px; box-shadow: 0 0 0 1px #0d0d0d, 0 30px 70px -30px rgba(0,0,0,0.9); overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.chat-bar { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; background: #252525; border-bottom: 1px solid #1a1a1a; }
+.chat-bar i { width: 11px; height: 11px; border-radius: 50%; background: #3d3d3d; }
+.chat-bar span { margin: 0 auto; color: var(--label); font-size: 12px; transform: translateX(-24px); }
+.chat-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px 0; }
+.chat-head .spend { color: var(--label); font: 11px var(--font-mono); }
+.chat-status { padding: 6px 14px 10px; color: var(--label); font-size: 12px; border-bottom: 1px solid var(--line); min-height: 34px; }
+.chat-log { height: 360px; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; background: #262626; scroll-behavior: smooth; }
+.msg { max-width: 92%; padding: 10px 12px; border-radius: 6px; font-size: 13.5px; line-height: 1.5; animation: rise 0.3s both; }
+.msg.me { align-self: flex-end; background: var(--control); }
+.msg.ai { align-self: flex-start; background: var(--card); }
+.msg.ai h4 { margin: 0 0 4px; font-size: 13.5px; }
+.msg.ai .src { margin-top: 8px; color: var(--faint); font: 11px var(--font-mono); }
+.fixcard { margin-top: 10px; padding: 10px; border-radius: 5px; background: var(--card-2); box-shadow: inset 0 0 0 1px #333; }
+.fixcard .t { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; font-size: 13px; }
+.fixcard .t span { color: var(--ok); font: 500 11px var(--font-mono); white-space: nowrap; }
+.fixcard .d { color: var(--dim); font-size: 12.5px; margin-top: 2px; }
+.seg { display: inline-flex; background: var(--control); border-radius: var(--radius); overflow: hidden; }
+.seg button { border: 0; background: none; color: var(--dim); padding: 5px 12px; font-size: 12.5px; cursor: pointer; }
+.seg button:hover { color: var(--text); }
+.seg button.on { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.fixrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; align-items: center; }
+.btn-plain { border: 0; border-radius: var(--radius); background: var(--control); color: var(--text); padding: 6px 12px; font-size: 12.5px; cursor: pointer; }
+.btn-plain:hover { background: var(--control-hover); }
+.btn-plain.accent { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.btn-plain.accent:hover { background: #ffc94f; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 0; }
+.chip { border: 1px solid #3a3a3a; background: none; color: var(--dim); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; cursor: pointer; }
+.chip:hover { color: var(--text); border-color: var(--dim); }
+.chat-input { display: flex; gap: 8px; padding: 10px 14px 14px; }
+.chat-input div { flex: 1; min-width: 0; height: 40px; border-radius: 5px; background: var(--card); color: var(--faint); font-size: 13px; padding: 0 12px; display: flex; align-items: center; }
+.chat-input b { display: grid; place-items: center; width: 64px; border-radius: 5px; background: var(--accent); color: var(--accent-text); font-size: 13px; }
+.typing::after { content: "▍"; color: var(--accent); animation: blink 0.8s steps(2) infinite; }
+
+/* ---------- lanes (sections) ---------- */
+.lane { border-top: 1px solid #0f0f0f; background: var(--lane); }
+.lane:nth-of-type(even) { background: var(--bg); }
+.lane > .wrap { padding-block: 72px; }
+.lane-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 24px 48px; align-items: end; margin-bottom: 36px; }
+.lane-head h2 { font-size: clamp(26px, 3.4vw, 38px); line-height: 1.08; margin-top: 10px; }
+.lane-head p { color: var(--dim); max-width: 60ch; }
+.track-tag { display: inline-flex; align-items: center; gap: 8px; }
+.track-tag i { width: 12px; height: 12px; border-radius: 2px; background: var(--accent); }
+
+/* setup */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; counter-reset: step; }
+.step { background: var(--panel); border-radius: 6px; padding: 22px 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.step .n { font: 500 12px var(--font-mono); color: var(--accent); }
+.step h3 { font-size: 18px; }
+.step p { color: var(--dim); font-size: 14px; }
+.step code { font: 12.5px var(--font-mono); background: var(--card); padding: 1px 5px; border-radius: 3px; color: var(--text); }
+.path { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; padding-top: 6px; }
+.path span { font: 11.5px var(--font-mono); color: var(--dim); background: var(--card); padding: 3px 7px; border-radius: 3px; }
+.path span.end { color: var(--accent-text); background: var(--accent); }
+
+/* everyday loop */
+.loop { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; }
+.loop-nav { display: flex; flex-direction: column; gap: 4px; }
+.loop-nav button { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: center; text-align: left; border: 0; border-radius: 5px; background: none; color: var(--dim); padding: 12px; cursor: pointer; }
+.loop-nav button:hover { background: var(--panel); color: var(--text); }
+.loop-nav button.on { background: var(--panel); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+.loop-nav .k { font: 500 12px var(--font-mono); color: var(--faint); }
+.loop-nav button.on .k { color: var(--accent); }
+.loop-nav b { font-weight: 600; }
+.loop-nav small { display: block; color: var(--label); font-size: 12.5px; }
+.loop-panel { background: var(--panel); border-radius: 8px; padding: 26px; min-width: 0; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 28px; align-items: center; min-height: 360px; }
+.loop-panel h3 { font-size: 24px; }
+.loop-panel .copy { display: flex; flex-direction: column; gap: 12px; }
+.loop-panel .copy p { color: var(--dim); }
+.loop-panel .copy .note { font: 12px var(--font-mono); color: var(--label); }
+.viz { background: var(--card); border-radius: 6px; padding: 16px; min-width: 0; }
+.viz svg { display: block; width: 100%; height: auto; }
+.viz-cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; margin-top: 12px; color: var(--label); font-size: 12px; }
+.levels-text { min-height: 7.5em; font-size: 14px; color: var(--text); }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.dev-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 3px; background: var(--control); font-size: 12.5px; white-space: nowrap; }
+.dev-chip i { width: 8px; height: 8px; border-radius: 50%; background: #f7a22c; }
+.dev-chip.mine { box-shadow: inset 0 0 0 1px var(--accent); }
+.dev-chip.new { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); animation: rise 0.4s both; }
+.dev-chip.fader { background: none; box-shadow: inset 0 0 0 1px #444; color: var(--dim); }
+.arrow { color: var(--faint); font-size: 12px; }
+
+/* song */
+.song { background: var(--panel); border-radius: 8px; padding: 22px; }
+.song-top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.song-top .meta { color: var(--label); font: 12px var(--font-mono); }
+.tl-scroll { overflow-x: auto; }
+.tl { position: relative; min-width: 640px; }
+.tl-row { display: grid; grid-template-columns: 92px 1fr; align-items: center; height: 26px; }
+.tl-row > span { color: var(--label); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
+.tl-lane { position: relative; height: 18px; }
+.tl-lane b { position: absolute; top: 0; bottom: 0; border-radius: 2px; font: 500 10px/18px var(--font-sans); padding-left: 5px; white-space: nowrap; overflow: hidden; color: #141414; }
+.tl-sections .tl-lane b { background: none; color: var(--text); border-left: 1px solid var(--dim); font-size: 11px; border-radius: 0; padding-left: 6px; }
+.tl-sections .tl-lane b::before { content: ""; position: absolute; left: -1px; top: 0; border: 4px solid transparent; border-left: 5px solid var(--dim); border-right: 0; }
+.tl-energy { height: 82px; }
+.tl-energy .tl-lane { height: 74px; display: flex; align-items: flex-end; gap: 1px; border-bottom: 1px solid #3a3a3a; }
+.tl-energy .tl-lane i { flex: 1; min-width: 0; background: #4a4a4a; height: 0; border-radius: 1px 1px 0 0; transition: height 0.25s ease, background-color 0.25s; }
+.tl-energy .tl-lane i.lit { background: var(--accent); }
+.tl-ruler .tl-lane { height: 16px; }
+.tl-ruler .tl-lane span { position: absolute; top: 0; font: 10px/16px var(--font-mono); color: var(--faint); }
+.playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); left: 92px; opacity: 0; pointer-events: none; }
+.playhead.on { opacity: 1; }
+.sec-table { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.sec { background: var(--card); border-radius: 5px; padding: 10px 12px; }
+.sec .nm { color: var(--label); font-size: 12px; }
+.sec .v { font: 500 18px var(--font-mono); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.sec .v small { font-size: 11px; color: var(--label); margin-left: 3px; }
+.sec .v.wait { color: var(--faint); }
+.findings { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; min-height: 34px; }
+.finding { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border-radius: 5px; background: var(--card); font-size: 13px; animation: rise 0.35s both; }
+.finding i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.mini { background: var(--panel); border-radius: 6px; padding: 20px; }
+.mini h3 { font-size: 17px; display: flex; align-items: center; gap: 8px; }
+.mini p { color: var(--dim); font-size: 14px; margin-top: 6px; }
+.kbd { font: 500 11px var(--font-mono); background: var(--control); color: var(--text); padding: 2px 7px; border-radius: 3px; }
+
+/* signal chain */
+.rack { background: var(--panel); border-radius: 8px; padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.switches { display: flex; flex-wrap: wrap; gap: 10px; }
+.switch { display: inline-flex; align-items: center; gap: 10px; border: 0; background: var(--card); color: var(--text); border-radius: 5px; padding: 9px 13px; cursor: pointer; font-size: 13.5px; }
+.switch .knob { width: 30px; height: 17px; border-radius: 999px; background: var(--control); position: relative; transition: background-color 0.2s; flex: none; }
+.switch .knob::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--dim); transition: transform 0.2s, background-color 0.2s; }
+.switch[aria-pressed="true"] .knob { background: var(--accent); }
+.switch[aria-pressed="true"] .knob::after { transform: translateX(13px); background: var(--accent-text); }
+.mixer { display: grid; gap: 6px; }
+.chan { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 10px; border-radius: 5px; background: var(--card); }
+.chan > span { font-size: 13px; color: var(--dim); display: flex; align-items: center; gap: 8px; }
+.chan > span i { width: 10px; height: 10px; border-radius: 2px; }
+.chan.master { box-shadow: inset 0 0 0 1px #3a3a3a; }
+.chan.master > span { color: var(--text); font-weight: 600; }
+.chain-note { color: var(--dim); font-size: 14px; max-width: 75ch; min-height: 3.2em; }
+.chain-note b { color: var(--text); }
+
+/* meter */
+.meter { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.meter-card { background: var(--panel); border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.readout { display: flex; align-items: center; gap: 16px; }
+.readout .num { font: 500 52px/1 var(--font-mono); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.readout .num small { font-size: 15px; color: var(--dim); letter-spacing: 0; margin-left: 4px; }
+.readout .verdict { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: var(--accent-text); font-weight: 700; flex: none; margin-left: auto; transition: background-color 0.25s; }
+.verdict-text { font-size: 15px; min-height: 3em; }
+.verdict-text .delta { font-family: var(--font-mono); margin-right: 6px; }
+.scale { position: relative; height: 40px; }
+.scale .bar { position: absolute; left: 0; right: 0; top: 10px; height: 10px; border-radius: 3px; overflow: hidden; display: flex; }
+.scale .bar span { height: 100%; transition: width 0.25s; }
+.scale .tick { position: absolute; top: 24px; transform: translateX(-50%); font: 10px var(--font-mono); color: var(--label); }
+.scale .marker { position: absolute; top: 4px; width: 2px; height: 22px; background: var(--text); transform: translateX(-1px); transition: left 0.15s; }
+.scale .target { position: absolute; top: 6px; height: 18px; width: 0; border-left: 1px dashed var(--text); opacity: 0.6; transition: left 0.25s; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.legend { display: grid; gap: 10px; }
+.legend div { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: start; font-size: 14px; color: var(--dim); }
+.legend i { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; }
+.legend b { color: var(--text); font-weight: 600; }
+.callout { background: var(--card); border-radius: 6px; padding: 14px 16px; font-size: 14px; color: var(--dim); }
+.callout b { color: var(--accent); }
+
+/* costs */
+.costs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.cost { background: var(--panel); border-radius: 6px; padding: 20px; }
+.cost .v { font: 500 26px var(--font-mono); letter-spacing: -0.03em; }
+.cost .k { color: var(--dim); font-size: 13.5px; margin-top: 4px; }
+.privacy { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.privacy ul { margin: 8px 0 0; padding-left: 18px; color: var(--dim); font-size: 14px; }
+.privacy li + li { margin-top: 4px; }
+.big-claim { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.25; }
+.big-claim em { font-style: normal; color: var(--ok); }
+
+/* faq */
+.faq { display: grid; gap: 8px; max-width: 880px; }
+.faq details { background: var(--panel); border-radius: 6px; }
+.faq summary { cursor: pointer; padding: 15px 18px; font-weight: 500; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--accent); font: 500 18px/1 var(--font-mono); transition: transform 0.2s; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p { padding: 0 18px 16px; color: var(--dim); font-size: 14px; max-width: 72ch; }
+footer { border-top: 1px solid #0f0f0f; background: var(--panel); }
+footer .wrap { padding-block: 26px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; color: var(--label); font-size: 13px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 980px) {
+  .hero-grid, .lane-head, .loop-panel, .meter, .privacy { grid-template-columns: minmax(0, 1fr); }
+  .loop { grid-template-columns: minmax(0, 1fr); }
+  .loop-nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+  .loop-nav button { flex: none; grid-template-columns: auto auto; }
+  .loop-nav small { display: none; }
+  .costs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sec-table { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .steps, .two-col { grid-template-columns: minmax(0, 1fr); }
+  .nav { display: none; }
+  .hero { padding-block: 32px 24px; }
+  .lane > .wrap { padding-block: 52px; }
+  .loop-panel, .song, .rack, .meter-card { padding: 16px; }
+  .chan { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .chat-log { height: 320px; }
+  .sec-table { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+<header class="transport">
+  <div class="wrap">
+    <a class="brand" href="#top"><i></i>Mix Assistant</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#setup">Setup</a>
+      <a href="#loop">Everyday use</a>
+      <a href="#song">Song &amp; arrangement</a>
+      <a href="#chain">Where devices go</a>
+      <a href="#meter">The meter</a>
+      <a href="#costs">Costs</a>
+      <a href="#faq">Help</a>
+    </nav>
+  </div>
+  <div class="ruler" aria-hidden="true">
+    <div class="ticks" id="ticks"></div>
+    <div class="head" id="head"></div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Max for Live · Ableton Live 12</div>
+        <h1 style="margin-top:14px">Mix advice that <em>listens</em> to your Master.</h1>
+        <p class="lede">Mix Assistant measures your mix while it plays, tests fixes on a copy so you can hear them first, and explains what to change in plain language. It only changes your Live set when you click Apply.</p>
+        <div class="facts"><span>Beginner, intermediate or advanced</span><span>Audio stays on your computer</span><span>Under a cent per analysis</span></div>
+
+        <div class="stage">
+          <div class="stage-cap">
+            <span class="hint">Try the device: press <b>Analyze</b>, switch <b>Club</b>, or press <b>Song</b>.</span>
+            <span class="example-tag">Live demo</span>
+          </div>
+          <div class="dv-wrap" id="dvWrap">
+            <div class="dv-frame" id="dvFrame">
+              <div class="dv-title"><i></i>MixAssistant</div>
+              <div class="dv">
+                <section class="display">
+                  <div class="top"><span class="label">LOUDNESS</span><span id="dState" class="state"><i></i><b>Ready</b></span></div>
+                  <div class="big-row"><span id="dS" class="big">-9.4</span><span class="unit">LUFS</span><span id="dVerdict" class="verdict over" title="">↓</span></div>
+                  <div class="pillrow"><span id="dTarget" class="pill">Target -14 LUFS</span><span id="dDelta" class="delta over">+4.7 LU</span></div>
+                  <div id="dHist" class="history"><i id="dTline" class="tline"></i></div>
+                  <div class="sub"><span><b id="dI">-9.3</b> this play</span><span><b id="dPeak" class="hot">3.3</b> dB peak</span></div>
+                </section>
+                <section class="side">
+                  <div class="goalrow">
+                    <div class="radio"><button class="btn on" data-goal="streaming">Streaming</button><button class="btn" data-goal="club">Club</button></div>
+                    <button id="dMenu" class="btn sq" aria-label="Settings"><svg viewBox="0 0 12 12"><rect x="1.5" y="2.5" width="9" height="1.2"/><rect x="1.5" y="5.4" width="9" height="1.2"/><rect x="1.5" y="8.3" width="9" height="1.2"/></svg></button>
+                  </div>
+                  <button id="dAnalyze" class="btn primary"><svg viewBox="0 0 12 12"><path d="M3 2v8l7-4z"/></svg>Analyze</button>
+                  <div class="row3">
+                    <button id="dSong" class="btn rec"><svg viewBox="0 0 12 12"><path d="M1 6h2l1.5-3 2 6 1.5-4 1 1h2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/></svg><span>Song</span></button>
+                    <button id="dArrange" class="btn"><svg viewBox="0 0 12 12"><rect x="1" y="2" width="5" height="2" rx=".5"/><rect x="4" y="5" width="7" height="2" rx=".5"/><rect x="2" y="8" width="6" height="2" rx=".5"/></svg><span>Arrange</span></button>
+                    <button id="dChat" class="btn"><svg viewBox="0 0 12 12"><path d="M2 2h8a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1H6L3.5 10.5V8.5H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/></svg><span>Chat</span><i id="dBadge" class="badge" hidden></i></button>
+                  </div>
+                  <div id="dInsights" class="card insights"><p>Ready. Play your track and press Analyze.</p></div>
+                  <div id="dSettings" class="card settings" hidden>
+                    <div class="pair"><span>Genre<em>House</em></span><span>Level<em id="dLevel">Beginner</em></span></div>
+                    <button id="dHeads" class="btn toggle">Heads-ups while I work</button>
+                    <button id="dDone" class="done">Done</button>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat" id="chatWin" aria-label="Chat window">
+        <div class="chat-bar"><i></i><i></i><i></i><span>Mix Assistant</span></div>
+        <div class="chat-head"><span class="eyebrow">Mix Assistant</span><span class="spend" id="spend">AI today $0.00 / month $0.38</span></div>
+        <div class="chat-status" id="chatStatus">Ready. Play your track and press Analyze.</div>
+        <div class="chat-log" id="chatLog" aria-live="polite">
+          <div class="msg ai">Play the loudest or most important part of your track for at least 10 seconds, then press <b>Analyze</b>. The assistant measures the last 30 seconds on your Master, tests possible fixes on a copy, and explains what to change and why.</div>
+        </div>
+        <div class="chips" id="chips">
+          <button class="chip" data-q="mud">Why is my low end muddy?</button>
+          <button class="chip" data-q="spotify">How loud for Spotify?</button>
+          <button class="chip" data-q="limiter">Where does a limiter go?</button>
+        </div>
+        <div class="chat-input"><div>Ask a question about your mix…</div><b>Send</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SETUP ================= -->
+  <section class="lane" id="setup">
+    <div class="wrap">
+      <div class="lane-head">
+        <div><span class="eyebrow track-tag"><i></i>Setup</span><h2>Three steps, about five minutes.</h2></div>
+        <p>You need Live 12 Suite, or Standard with Max for Live, version 12.3 or later on macOS, and an OpenRouter account with a few dollars of credit for the explanations. Measuring works without one.</p>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <span class="n">Step 1</span>
+          <h3>Put the folder in your User Library</h3>
+          <p>Unzip the download. Drag the <b>Mix Assistant</b> folder onto <b>User Library</b> in Live's browser, or copy it into <code>Music/Ableton/User Library</code>. Keep the files inside it together.</p>
+          <div class="path"><span>User Library</span><span>Mix Assistant</span><span class="end">Devices</span></div>
+        </article>
+        <article class="step">
+          <span class="n">Step 2</span>
+          <h3>Drop MixAssistant on the Master</h3>
+          <p>Make it the <b>last</b> device on the Master track. Then choose where the track is going, <b>Streaming</b> or <b>Club</b>. That sets the loudness target and is remembered for this project.</p>
+          <div class="path"><span>Master</span><span>… your devices</span><span class="end">MixAssistant</span></div>
+        </article>
+        <article class="step">
+          <span class="n">Step 3</span>
+          <h3>Add your OpenRouter key</h3>
+          <p>Press <b>Chat</b>. Paste a key from openrouter.ai/keys. It's checked for free before it's saved. Set a daily and monthly limit; the defaults are $1 a day and $10 a month.</p>
+          <div class="path"><span>Chat</span><span>Key</span><span class="end">Limits</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= EVERYDAY LOOP ================= -->
+  <section class="lane" id="loop">
+    <div class="wrap">
+      <div class="lane-head">
+        <div><span class="eyebrow track-tag"><i></i>Everyday use</span><h2>Play, analyze, listen, decide.</h2></div>
+        <p>The everyday loop takes about a minute. Nothing in your set changes until you press Apply, and Revert takes it out again.</p>
+      </div>
+      <div class="loop">
+        <div class="loop-nav" role="tablist" id="loopNav">
+          <button role="tab" class="on" data-step="0"><span class="k">1</span><span><b>Play</b><small>10 seconds of the important part</small></span></button>
+          <button role="tab" data-step="1"><span class="k">2</span><span><b>Analyze</b><small>Measure, test, explain</small></span></button>
+          <button role="tab" data-step="2"><span class="k">3</span><span><b>Read</b><small>At your level</small></span></button>
+          <button role="tab" data-step="3"><span class="k">4</span><span><b>Audition</b><small>Before and after, level-matched</small></span></button>
+          <button role="tab" data-step="4"><span class="k">5</span><span><b>Apply</b><small>Or revert</small></span></button>
+        </div>
+        <div class="loop-panel" id="loopPanel" role="tabpanel"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SONG ================= -->
+  <section class="lane" id="song">
+    <div class="wrap">
+      <div class="lane-head">
+        <div><span class="eyebrow track-tag"><i style="background:var(--ok)"></i>Song &amp; arrangement</span><h2>Does the drop actually lift?</h2></div>
+        <p><b>Arrange</b> reads your locators and clips without playing anything. <b>Song</b> also measures the song as it plays in Live: loudness, low end and brightness, section by section. Name your locators (Intro, Build, Drop…) for the best results.</p>
+      </div>
+      <div class="song">
+        <div class="song-top">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn-plain accent" id="songPlay">▶ Measure the song</button>
+            <button class="btn-plain" id="songReset">Reset</button>
+          </div>
+          <span class="meta" id="songMeta">Example song · 88 bars · 140 BPM · 2:31</span>
+        </div>
+        <div class="tl-scroll">
+          <div class="tl" id="tl">
+            <div class="tl-row tl-ruler"><span></span><div class="tl-lane" id="tlRuler"></div></div>
+            <div class="tl-row tl-sections"><span>Locators</span><div class="tl-lane" id="tlSecs"></div></div>
+            <div id="tlTracks"></div>
+            <div class="tl-row tl-energy"><span>Loudness</span><div class="tl-lane" id="tlEnergy"></div></div>
+            <div class="playhead" id="playhead"></div>
+          </div>
+        </div>
+        <div class="sec-table" id="secTable"></div>
+        <div class="findings" id="findings"></div>
+      </div>
+      <div class="two-col">
+        <div class="mini"><h3><span class="kbd">Arrange</span> No playing needed</h3><p>Reads where clips sit and how sections are named. It points out drops that don't add anything, sections that aren't whole phrases, long stretches where nothing changes, a slow start for streaming, and little drums-only room for DJs.</p></div>
+        <div class="mini"><h3><span class="kbd">Song</span> Measured as it plays</h3><p>Press Song, then play from bar 1. It stops by itself a bar after the last clip. Loops and jumping around are fine: each bar is measured where it played. The temporary recording is deleted right after. Each review is remembered, so the next one starts with what changed.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHAIN ================= -->
+  <section class="lane" id="chain">
+    <div class="wrap">
+      <div class="lane-head">
+        <div><span class="eyebrow track-tag"><i style="background:var(--under)"></i>Where devices go</span><h2>One device on the Master. Listeners where you want detail.</h2></div>
+        <p>A <b>MixListener</b> lets the assistant hear a track on its own, so it can tell that the kick and bass fight, or that a pad buries the vocal, and suggest the fix on the track that causes it. Turn the options on to see where each device belongs.</p>
+      </div>
+      <div class="rack">
+        <div class="switches">
+          <button class="switch" id="swTracks" aria-pressed="false"><span class="knob"></span>Advice per track</button>
+          <button class="switch" id="swLimiter" aria-pressed="false"><span class="knob"></span>Limiter on the Master</button>
+          <button class="switch" id="swApplied" aria-pressed="false"><span class="knob"></span>After Apply</button>
+        </div>
+        <div class="mixer" id="mixer"></div>
+        <p class="chain-note" id="chainNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= METER ================= -->
+  <section class="lane" id="meter">
+    <div class="wrap">
+      <div class="lane-head">
+        <div><span class="eyebrow track-tag"><i style="background:var(--hot)"></i>The meter</span><h2>Reading the verdict.</h2></div>
+        <p>The target is for a whole song, so the dot compares the integrated loudness of <b>this play</b> once 10 seconds have played. Five seconds of silence starts a new play. Drag the slider to see how the device judges it.</p>
+      </div>
+      <div class="meter">
+        <div class="meter-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <span class="eyebrow">This play</span>
+            <div class="seg" id="mGoal"><button class="on" data-goal="streaming">Streaming</button><button data-goal="club">Club</button></div>
+          </div>
+          <div class="readout"><span class="num" id="mNum">-9.1<small>LUFS</small></span><span class="verdict" id="mDot"></span></div>
+          <div class="scale" id="mScale"><div class="bar" id="mBar"></div><span class="target" id="mTarget"></span><span class="marker" id="mMarker"></span></div>
+          <label for="mRange" class="eyebrow" style="margin-bottom:-10px">Integrated loudness</label>
+          <input type="range" id="mRange" min="-20" max="-3" step="0.1" value="-9.1">
+          <p class="verdict-text" id="mText"></p>
+        </div>
+        <div class="meter-card">
+          <div class="legend">
+            <div><i style="background:var(--ok)"></i><span><b>Green:</b> within 1 LU of the target.</span></div>
+            <div><i style="background:var(--accent)"></i><span><b>Amber:</b> louder than the target. For streaming, the service will turn it down.</span></div>
+            <div><i style="background:var(--hot)"></i><span><b>Red:</b> far over. For streaming, above -9 LUFS; for club, more than 3 LU over.</span></div>
+            <div><i style="background:var(--under)"></i><span><b>Blue:</b> quieter than the target.</span></div>
+          </div>
+          <div class="callout"><b>Keep the Master fader at 0 dB.</b> Like every device on the Master, Mix Assistant measures before the fader. If it isn't at 0 dB, the device shows a <b>!</b> instead of a verdict. Control the level with devices before Mix Assistant, so what you measure is what you export.</div>
+          <div class="callout">The peak at the bottom right turns red above <b>-1 dB</b>. Keep true peaks under -1 dBTP so players and streaming encoders don't distort them.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COSTS ================= -->
+  <section class="lane" id="costs">
+    <div class="wrap">
+      <div class="lane-head">
+        <div><span class="eyebrow track-tag"><i style="background:var(--dim)"></i>Costs &amp; privacy</span><h2>You pay OpenRouter directly, a fraction of a cent at a time.</h2></div>
+        <p>With the default model, Claude Haiku, a month of regular use is usually well under $1. The chat window shows what you've spent today and this month. When a limit is reached, the AI pauses and measuring keeps working.</p>
+      </div>
+      <div class="costs">
+        <div class="cost"><div class="v">$0.004–0.008</div><div class="k">per Analyze</div></div>
+        <div class="cost"><div class="v">$0.002</div><div class="k">per arrangement review</div></div>
+        <div class="cost"><div class="v">$0.0005</div><div class="k">per chat answer</div></div>
+        <div class="cost"><div class="v">$0</div><div class="k">for heads-ups (Explain: $0.001)</div></div>
+      </div>
+      <div class="privacy">
+        <div class="mini"><p class="big-claim">Your audio <em>never leaves</em> your computer.</p><p>Your key is stored only in your Application Support folder, readable only by your user account. Heads-ups send nothing unless you press Explain.</p></div>
+        <div class="mini"><h3>What is sent to the AI</h3>
+          <ul>
+            <li>The measurements: numbers, not audio</li>
+            <li>Set, track and device names; for Arrange, locator names and where clips sit</li>
+            <li>For reference tracks, their names and measurements</li>
+            <li>Earlier advice for this project, and what you type</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section class="lane" id="faq">
+    <div class="wrap">
+      <div class="lane-head">
+        <div><span class="eyebrow track-tag"><i style="background:var(--faint)"></i>Help</span><h2>When something looks off.</h2></div>
+        <p>For anything not listed, click <b>Save diagnostics</b> in the chat window. It saves versions, settings, the last measurements and the recent log, with no audio and no key, and shows the file in Finder.</p>
+      </div>
+      <div class="faq">
+        <details><summary>"No audio in the last 30 s"</summary><p>The device only hears what plays through the Master while it's on. Play the track, then press Analyze. If it says audio isn't running, turn on audio in Live's settings.</p></details>
+        <details><summary>The numbers are 6 dB away from my export</summary><p>Check the Master fader. Everything is measured before it; keep it at 0 dB and set the level with devices before Mix Assistant.</p></details>
+        <details><summary>I use a limiter on the Master</summary><p>Put a MixListener on the Master before the limiter, and keep MixAssistant last. Analyze still measures loudness and peaks at the end of the chain, but tests fixes on the mix before the limiter, plays that in Before/After, and Apply puts the fixes in front of the limiter.</p></details>
+        <details><summary>A reference track won't load</summary><p>Only WAV files work; export or convert MP3 and AAC first. If the chat window inside Live doesn't open a file dialog, open the chat in your browser from ☰ in the device and add references there.</p></details>
+        <details><summary>A MixListener says "Starting…" or isn't heard</summary><p>Make sure it's the last device on the track and the track isn't frozen. Return tracks aren't supported yet.</p></details>
+        <details><summary>The chat window is blank</summary><p>Close it and press Chat again, or choose Open chat in browser under ☰ in the device.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>Mix Assistant · Max for Live device for Ableton Live 12.3+ on macOS</span><span>Not made or endorsed by Ableton. Numbers don't replace your ears: always listen before you keep a change.</span></div></footer>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = (v) => (v > 0 ? "+" : "") + v.toFixed(1);
+  const num = (v) => v.toFixed(1);
+
+  /* ---------- transport ruler: bar numbers and a scroll playhead ---------- */
+  const ticks = $("ticks");
+  for (let b = 1; b <= 89; b += 8) { const s = document.createElement("span"); s.textContent = b; ticks.appendChild(s); }
+  const head = $("head");
+  const navLinks = [...document.querySelectorAll(".nav a")];
+  const sections = navLinks.map((a) => document.querySelector(a.getAttribute("href")));
+  function onScroll() {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    const f = max > 0 ? scrollY / max : 0;
+    head.style.transform = `translateX(${f * (head.parentElement.clientWidth - 2)}px)`;
+    let cur = -1;
+    sections.forEach((s, i) => { if (s && s.getBoundingClientRect().top < 140) cur = i; });
+    navLinks.forEach((a, i) => a.classList.toggle("on", i === cur));
+  }
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", onScroll);
+  onScroll();
+
+  /* ---------- the device ---------- */
+  const TARGET = { streaming: -14, club: -7 };
+  const TITLES = {
+    streaming: { ok: "This play is on target", over: "Louder than streaming plays it: it will be turned down", hot: "Much louder than streaming needs: turned down, and the extra loudness costs dynamics", under: "Quieter than streaming plays it: it may be turned up, or sound quiet next to others" },
+    club: { ok: "This play is on target", over: "Louder than typical club masters", hot: "Much louder than typical club masters", under: "Quieter than typical club masters" },
+  };
+  // The same rule as the device (device/ui/device.js).
+  function verdictOf(d, i, goal) {
+    if (Math.abs(d) <= 1) return "ok";
+    if (d < 0) return "under";
+    if (goal === "streaming") return i > -9 ? "hot" : "over";
+    return d > 3 ? "hot" : "over";
+  }
+  const GLYPH = { ok: "✓", over: "↓", hot: "↓", under: "↑" };
+
+  const dv = { goal: "streaming", busy: false, song: false, hist: [], powers: [], s: -9.4, peak: 3.3 };
+  const hist = $("dHist");
+  for (let k = 0; k < 30; k++) { const b = document.createElement("b"); hist.insertBefore(b, $("dTline")); }
+  const bars = [...hist.querySelectorAll("b")];
+  // A drop that breathes: short-term loudness around -9.3 LUFS, with a dip every 8 bars.
+  let t = 0;
+  function nextLevel() {
+    t++;
+    const phrase = t % 16;
+    const dip = phrase >= 13 ? -1.6 : 0;
+    return -9.3 + dip + Math.sin(t * 0.9) * 0.35 + (Math.random() - 0.5) * 0.5;
+  }
+  for (let k = 0; k < 30; k++) { const v = nextLevel(); dv.hist.push(v); dv.powers.push(10 ** (v / 10)); }
+  const h = (v) => Math.max(2, Math.min(30, ((v + 24) / 20) * 30));
+  function renderDevice() {
+    const i = 10 * Math.log10(dv.powers.reduce((a, b) => a + b, 0) / dv.powers.length);
+    const target = TARGET[dv.goal];
+    const d = i - target;
+    const v = verdictOf(d, i, dv.goal);
+    $("dS").textContent = num(dv.s);
+    $("dI").textContent = num(i);
+    $("dPeak").textContent = num(dv.peak);
+    $("dPeak").className = dv.peak > -1 ? "hot" : "";
+    const vd = $("dVerdict");
+    vd.className = "verdict " + v;
+    vd.textContent = GLYPH[v];
+    vd.title = TITLES[dv.goal][v];
+    $("dTarget").textContent = `Target ${target} LUFS`;
+    const de = $("dDelta");
+    de.className = "delta " + v;
+    de.textContent = `${fmt(d)} LU`;
+    bars.forEach((b, k) => (b.style.height = h(dv.hist[k]) + "px"));
+    $("dTline").style.bottom = h(target) + "px";
+  }
+  function tick() {
+    const v = nextLevel();
+    dv.s = v;
+    dv.hist.push(v); dv.hist.shift();
+    dv.powers.push(10 ** (v / 10)); if (dv.powers.length > 60) dv.powers.shift();
+    dv.peak = Math.round((2.6 + Math.random() * 1.6) * 10) / 10;
+    renderDevice();
+  }
+  renderDevice();
+  setInterval(tick, reduce ? 3000 : 900);
+
+  const frame = $("dvFrame"), wrapEl = $("dvWrap");
+  function fit() {
+    const k = Math.min(2, wrapEl.clientWidth / 352);
+    frame.style.transform = `scale(${k})`;
+    wrapEl.style.height = (184 * k) + "px";
+  }
+  addEventListener("resize", fit); fit();
+  if (document.fonts) document.fonts.ready.then(fit);
+
+  const insights = $("dInsights");
+  const state = $("dState");
+  function setState(kind, text) { state.className = "state " + (kind || ""); state.querySelector("b").textContent = text; }
+  function insightList(title, items, more) {
+    insights.innerHTML = `<h4>${title}</h4>` + items.map(([sev, t]) => `<div class="item"><i class="dot-${sev}"></i><span>${t}</span></div>`).join("") + (more ? `<div class="more">+${more} more in the chat</div>` : "");
+  }
+  const buttons = ["dAnalyze", "dSong", "dArrange"].map($);
+  function lock(on) { dv.busy = on; buttons.forEach((b) => (b.disabled = on && !(dv.song && b.id === "dSong"))); }
+
+  document.querySelectorAll(".dv .radio .btn").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll(".dv .radio .btn").forEach((x) => x.classList.toggle("on", x === b));
+    dv.goal = b.dataset.goal;
+    renderDevice();
+    status(dv.goal === "club" ? "Goal: Club. Target -7 LUFS for house." : "Goal: Streaming. Target -14 LUFS.");
+  }));
+  $("dMenu").addEventListener("click", () => { const s = $("dSettings"); s.hidden = !s.hidden; $("dMenu").classList.toggle("on", !s.hidden); });
+  $("dDone").addEventListener("click", () => { $("dSettings").hidden = true; $("dMenu").classList.remove("on"); });
+  $("dHeads").addEventListener("click", (e) => { e.currentTarget.classList.toggle("on"); status(e.currentTarget.classList.contains("on") ? "Heads-ups on: checks the last 8 seconds about every 25 seconds, on your computer, for free." : "Heads-ups off."); });
+  $("dChat").addEventListener("click", () => { $("dBadge").hidden = true; $("chatWin").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }); });
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, reduce ? Math.min(ms, 200) : ms));
+  $("dAnalyze").addEventListener("click", async () => {
+    if (dv.busy) return;
+    lock(true);
+    setState("busy", "Measuring");
+    insights.innerHTML = "<p>Capturing the last 30 seconds...</p>"; status("Capturing the last 30 seconds...");
+    await wait(900);
+    insights.innerHTML = "<p>Measuring the mix and testing fixes on a copy...</p>"; status("Measuring the mix and testing fixes on a copy...");
+    await wait(1600);
+    insights.innerHTML = "<p>Asking for advice...</p>"; status("Asking anthropic/claude-haiku-5.5 for advice...");
+    await wait(1200);
+    setState("", "Ready");
+    insightList("Mix", [["high", "True peak above the ceiling"], ["medium", "Narrow resonance"], ["low", "Low-mid mud"]], 1);
+    $("dBadge").hidden = false;
+    status("Done ($0.0043). 4 issue(s) found.");
+    spend(0.0043);
+    addAnalysis();
+    lock(false);
+  });
+  $("dArrange").addEventListener("click", async () => {
+    if (dv.busy) return;
+    lock(true);
+    setState("busy", "Reading");
+    insights.innerHTML = "<p>Reading the arrangement...</p>"; status("Reading the arrangement...");
+    await wait(1200);
+    setState("", "Ready");
+    insightList("Arrangement", [["medium", "2 long stretches where nothing changes"], ["medium", "1:09 before \"Drop\""], ["low", "140 BPM is unusual for house"]], 1);
+    $("dBadge").hidden = false;
+    status("Arrangement reviewed ($0.0021).");
+    spend(0.0021);
+    addAI(`<h4>Arrangement, most important first</h4>1. <b>Groove A, bars 25-28:</b> bars 9-32 have no entries or exits for 24 bars. Dip the Chords about 6 dB at bar 25 and bring them back at bar 29.<br>2. <b>Intro, bars 1-8:</b> the Drop doesn't arrive until 1:09. Select bars 1-8 and use Delete Time to shorten the Intro.`, "Example from a real review · $0.0021");
+    lock(false);
+  });
+  let songTimer = null;
+  $("dSong").addEventListener("click", async () => {
+    const b = $("dSong");
+    if (dv.song) { finishSong(); return; }
+    if (dv.busy) return;
+    dv.song = true; lock(true);
+    b.classList.add("recording"); b.querySelector("span").textContent = "Stop";
+    setState("rec", "Song");
+    let bar = 1;
+    insights.innerHTML = "<h4>Measuring the song</h4><p>Start playback in Live, from bar 1 for a full review.</p>";
+    status("Recording the song: play it from the start; it finishes by itself at the end.");
+    await wait(900);
+    songTimer = setInterval(() => {
+      bar += 4;
+      insights.innerHTML = `<h4>Measuring the song</h4><p>Bar ${Math.min(bar, 88)} of 88. It finishes by itself a bar after the last clip.</p>`;
+      if (bar > 89) finishSong();
+    }, reduce ? 60 : 160);
+  });
+  async function finishSong() {
+    clearInterval(songTimer);
+    const b = $("dSong");
+    b.classList.remove("recording"); b.querySelector("span").textContent = "Song";
+    setState("busy", "Measuring");
+    insights.innerHTML = "<p>Measuring the song bar by bar (2:31 recorded)...</p>"; status("Measuring the song bar by bar (2:31 recorded)...");
+    await wait(1200);
+    dv.song = false;
+    setState("", "Ready");
+    insightList("Arrangement", [["medium", "Every section within 1.7 LU"], ["medium", "1:09 before \"Drop\""], ["low", "Peaks reach +4.3 dBFS"]], 2);
+    $("dBadge").hidden = false;
+    status("Arrangement reviewed with the play-through ($0.0023).");
+    spend(0.0023);
+    addAI(`<h4>Energy check</h4>The whole song measures -9.9 LUFS. The Drop is only 0.3 LU louder than Groove A, so it doesn't lift much. Take the Bass out for 8 bars before the Drop, and bring the Drop's lead in on the downbeat.`, "Example from a real play-through · $0.0023");
+    lock(false);
+  }
+
+  /* ---------- the chat window ---------- */
+  const log = $("chatLog");
+  let spent = 0;
+  function spend(c) { spent += c; $("spend").textContent = `AI today $${spent.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")} / month $${(0.38 + spent).toFixed(2)}`; }
+  function status(t) { $("chatStatus").textContent = t; }
+  function scrollLog() { log.scrollTop = log.scrollHeight; }
+  function addMe(t) { const m = document.createElement("div"); m.className = "msg me"; m.textContent = t; log.appendChild(m); scrollLog(); }
+  function addAI(html, src) {
+    const m = document.createElement("div"); m.className = "msg ai";
+    log.appendChild(m);
+    const full = html + (src ? `<div class="src">${src}</div>` : "");
+    if (reduce) { m.innerHTML = full; scrollLog(); return Promise.resolve(m); }
+    // Reveal word by word, keeping tags intact.
+    const parts = full.split(/(<[^>]+>|\s+)/).filter(Boolean);
+    let k = 0, acc = "";
+    m.classList.add("typing");
+    return new Promise((res) => {
+      const iv = setInterval(() => {
+        for (let n = 0; n < 3 && k < parts.length; n++) acc += parts[k++];
+        m.innerHTML = acc; scrollLog();
+        if (k >= parts.length) { clearInterval(iv); m.classList.remove("typing"); res(m); }
+      }, 28);
+    });
+  }
+  async function addAnalysis() {
+    const m = await addAI(`<h4>Start here: peaks</h4>Your peaks reach +4.9 dB and true peak goes over the -1 dBTP ceiling. Put Live's Limiter last before MixAssistant with the ceiling at -1 dB.<h4 style="margin-top:10px">Then: the low-mids</h4>250–500 Hz sits 3.4 dB above typical house mixes, mostly from the Chords track. A gentle cut was tested on a copy:`, "");
+    const card = document.createElement("div");
+    card.className = "fixcard";
+    card.innerHTML = `<div class="t">EQ Eight on Chords: bell −3 dB at 350 Hz, Q 1.0<span>tested ✓</span></div><div class="d">Loudness-matched, so you judge the change and not the volume.</div>
+      <div class="fixrow"><div class="seg" role="group" aria-label="Audition"><button data-a="before">Before</button><button data-a="after">After</button><button class="on" data-a="live">Live</button></div><button class="btn-plain accent" data-apply>Apply</button></div>`;
+    m.appendChild(card);
+    const src = document.createElement("div"); src.className = "src"; src.textContent = "Example from a real session · claude-haiku-5.5 · $0.0043"; m.appendChild(src);
+    card.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
+      card.querySelectorAll(".seg button").forEach((x) => x.classList.toggle("on", x === b));
+      status(b.dataset.a === "live" ? "Back to your mix." : `Playing ${b.dataset.a} (loudness-matched).`);
+    }));
+    const ap = card.querySelector("[data-apply]");
+    ap.addEventListener("click", () => {
+      const on = ap.textContent === "Apply";
+      ap.textContent = on ? "Revert" : "Apply";
+      ap.classList.toggle("accent", !on);
+      status(on ? "Applied: EQ Eight inserted on Chords, just before its MixListener." : "Reverted: EQ Eight removed.");
+    });
+    scrollLog();
+  }
+  const ANSWERS = {
+    mud: ["Why is my low end muddy?", "Your 250–500 Hz band is 3.4 dB above typical house mixes, and most of it comes from the Chords track. Try the tested cut on Chords, −3 dB around 350 Hz, and compare Before and After at matched loudness. Cut at the source rather than on the Master."],
+    spotify: ["How loud should I master for Spotify?", "Spotify plays music at about −14 LUFS and turns louder tracks down. Your drop plays at about −9 LUFS, so it will be turned down by about 5 dB: the extra loudness only costs dynamics. Keep true peaks under −1 dBTP so the encoder doesn't distort them."],
+    limiter: ["Where does a limiter go?", "Last before MixAssistant on the Master, so the meter sees what you export. If you'd like fixes tested on the mix before limiting, add a MixListener in front of the limiter: Analyze then tests and plays fixes there, and Apply inserts them before the limiter."],
+  };
+  document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", async () => {
+    const [q, a] = ANSWERS[c.dataset.q];
+    addMe(q);
+    status("Thinking...");
+    await wait(600);
+    await addAI(a, "Example answer · about $0.0005");
+    spend(0.0005);
+    status("Answered ($0.0005).");
+  }));
+
+  /* ---------- everyday loop ---------- */
+  const LEVELS = {
+    Beginner: "The low-mids (250–500 Hz) are louder than in most house tracks, which can make a mix sound boxy or muddy. Most of it comes from the Chords track. Try the tested cut there and listen with Before and After.",
+    Intermediate: "Low-mid build-up: the 250–500 Hz band is +3.4 dB against the house profile, mostly from Chords. A −3 dB bell at 350 Hz (Q 1.0) on Chords, tested in the sandbox, brings it back within range.",
+    Advanced: "mud +3.4 dB vs house (tol ±2), source Chords. Sandbox: EQ Eight bell 350 Hz / −3 dB / Q 1.0 on Chords. Apply inserts it before the track's MixListener.",
+  };
+  const STEPS = [
+    { h: "Play the part that matters", p: "Play the loudest or most important part of your track, usually the drop or chorus, for at least 10 seconds. The device keeps listening to the last 30 seconds of your Master.", note: "Tip: loop the drop while you work.", viz: "play" },
+    { h: "Press Analyze", p: "The assistant measures the last 30 seconds, tries possible fixes on a copy of the audio, and explains what to change first. It takes about 30–70 seconds and costs under a cent.", note: "Measuring and testing run on your computer. Only the numbers go to the AI.", viz: "analyze" },
+    { h: "Read it at your level", p: "The same finding reads differently for a beginner and for an engineer. Pick your level under ☰ in the device, or at the top of the chat window. Ask follow-up questions in the chat.", note: "Every claim points back to a measured number.", viz: "levels" },
+    { h: "Listen before you decide", p: "On a tested fix, Before and After play a loudness-matched copy, so you judge the change and not the volume. Live goes back to your mix.", note: "Numbers don't replace your ears.", viz: "audition" },
+    { h: "Apply, or revert", p: "Apply inserts ordinary Ableton devices with the tested settings. Master fixes go on the Master just before MixAssistant; track fixes go on that track, just before its MixListener. Tweak them afterwards, or press Revert to remove them.", note: "Nothing changes in your set until you press Apply.", viz: "apply" },
+  ];
+  const panel = $("loopPanel");
+  let audition = "before", applied = false, level = "Beginner", playTimer = null;
+  function spectrumPath(mud, w = 520, hgt = 180) {
+    const pts = [];
+    for (let x = 0; x <= w; x += 4) {
+      const f = 20 * Math.pow(1000, x / w);
+      const lf = Math.log2(f / 1000);
+      let db = -4 - lf * 2.6 - Math.max(0, lf - 2.2) * 6 - Math.max(0, -3.6 - lf) * 9;
+      db += 2.5 * Math.exp(-((Math.log2(f / 70)) ** 2) / 0.5);
+      db += mud * Math.exp(-((Math.log2(f / 350)) ** 2) / 0.9);
+      const y = 14 + ((6 - db) / 34) * (hgt - 30);
+      pts.push(`${x.toFixed(0)},${y.toFixed(1)}`);
+    }
+    return "M" + pts.join(" L");
+  }
+  function xOf(f, w = 520) { return (Math.log(f / 20) / Math.log(1000)) * w; }
+  function freqAxis() {
+    return [50, 100, 350, 1000, 5000, 10000].map((f) => `<text x="${xOf(f).toFixed(0)}" y="178" fill="var(--label)" font-size="10" font-family="var(--font-mono)" text-anchor="middle">${f >= 1000 ? f / 1000 + "k" : f}</text>`).join("");
+  }
+  function renderStep(n) {
+    clearInterval(playTimer);
+    document.querySelectorAll("#loopNav button").forEach((b) => { const on = +b.dataset.step === n; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+    const s = STEPS[n];
+    let viz = "";
+    if (s.viz === "play") {
+      viz = `<div class="viz"><svg viewBox="0 0 520 120" role="img" aria-label="Arrangement with the drop looping">
+        <rect x="0" y="0" width="520" height="120" fill="var(--card)"/>
+        <rect x="236" y="4" width="182" height="112" fill="var(--accent-soft)"/>
+        ${[["Drums", 0, 520, "#f7a22c"], ["Bass", 0, 180, "#9be15d"], ["Bass", 236, 520, "#9be15d"], ["Chords", 0, 520, "#7fd17f"], ["Lead", 180, 236, "#9d8cff"], ["Lead", 290, 418, "#9d8cff"]].map(([n, a, b, c], k) => { const row = { Drums: 0, Bass: 1, Chords: 2, Lead: 3 }[n]; return `<rect x="${a + 1}" y="${10 + row * 26}" width="${b - a - 2}" height="20" rx="2" fill="${c}" opacity="0.85"/>`; }).join("")}
+        <rect id="lp" x="236" y="2" width="2" height="116" fill="var(--accent)"/>
+      </svg><div class="viz-cap"><span>Looping the drop, bars 41–72</span><span class="mono" id="lpT">0:00</span></div></div>`;
+    } else if (s.viz === "analyze") {
+      viz = `<div class="viz"><div style="display:grid;gap:10px" id="anSteps">
+        ${["Capture the last 30 s of the Master", "Measure loudness, peaks, spectrum, stereo, dynamics", "Test fixes on a copy", "Explain what to change first"].map((t, k) => `<div style="display:flex;gap:10px;align-items:center;opacity:.35;transition:opacity .3s" data-k="${k}"><span class="mono" style="color:var(--accent);width:18px">${k + 1}</span><span>${t}</span><span class="mono" style="margin-left:auto;color:var(--label)" data-t></span></div>`).join("")}
+      </div><div class="viz-cap"><button class="btn-plain accent" id="anRun">▶ Run it</button><span>About 30–70 s in real life</span></div></div>`;
+    } else if (s.viz === "levels") {
+      viz = `<div class="viz"><div class="seg" id="lvSeg">${Object.keys(LEVELS).map((k) => `<button class="${k === level ? "on" : ""}">${k}</button>`).join("")}</div><p class="levels-text" id="lvText" style="margin-top:14px">${LEVELS[level]}</p><div class="viz-cap"><span class="example-tag">Example</span><span>Same measurement, three ways</span></div></div>`;
+    } else if (s.viz === "audition") {
+      viz = `<div class="viz"><svg viewBox="0 0 520 186" role="img" aria-label="Spectrum before and after a cut at 350 Hz">
+        ${[0, 1, 2, 3].map((k) => `<line x1="0" x2="520" y1="${20 + k * 38}" y2="${20 + k * 38}" stroke="var(--line)"/>`).join("")}
+        <line x1="${xOf(350).toFixed(0)}" x2="${xOf(350).toFixed(0)}" y1="6" y2="164" stroke="var(--accent)" stroke-dasharray="3 3" opacity="0.5"/>
+        <path id="spBefore" d="${spectrumPath(3.4)}" fill="none" stroke="var(--faint)" stroke-width="1.5"/>
+        <path id="spNow" d="${spectrumPath(audition === "after" ? 0.4 : 3.4)}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>
+        ${freqAxis()}
+      </svg><div class="viz-cap"><div class="seg" id="auSeg"><button data-a="before" class="${audition === "before" ? "on" : ""}">Before</button><button data-a="after" class="${audition === "after" ? "on" : ""}">After</button></div><span class="mono">EQ Eight · 350 Hz · −3 dB · Q 1.0</span></div></div>`;
+    } else if (s.viz === "apply") {
+      viz = `<div class="viz"><div style="display:grid;gap:14px">
+        <div><div class="eyebrow" style="margin-bottom:8px">Chords</div><div class="chain" id="apChain"></div></div>
+        <div><div class="eyebrow" style="margin-bottom:8px">Master</div><div class="chain"><span class="dev-chip"><i></i>Glue Compressor</span><span class="arrow">→</span><span class="dev-chip"><i></i>Limiter</span><span class="arrow">→</span><span class="dev-chip mine"><i></i>MixAssistant</span></div></div>
+      </div><div class="viz-cap"><button class="btn-plain accent" id="apBtn"></button><span id="apNote"></span></div></div>`;
+    }
+    panel.innerHTML = `<div class="copy"><span class="eyebrow">Step ${n + 1} of 5</span><h3>${s.h}</h3><p>${s.p}</p><span class="note">${s.note}</span></div>${viz}`;
+
+    if (s.viz === "play") {
+      let x = 236, sec = 0;
+      playTimer = setInterval(() => {
+        x += 2; if (x > 418) x = 236;
+        sec = ((x - 236) / 182) * 54.9;
+        const lp = $("lp"); if (!lp) return;
+        lp.setAttribute("x", x);
+        $("lpT").textContent = `${Math.floor((68.6 + sec) / 60)}:${String(Math.floor((68.6 + sec) % 60)).padStart(2, "0")}`;
+      }, reduce ? 400 : 40);
+    }
+    if (s.viz === "analyze") {
+      $("anRun").addEventListener("click", async (e) => {
+        e.currentTarget.disabled = true;
+        const rows = [...document.querySelectorAll("#anSteps [data-k]")];
+        rows.forEach((r) => { r.style.opacity = ".35"; r.querySelector("[data-t]").textContent = ""; });
+        const times = ["0.1 s", "6 s", "on a copy", "$0.0043"];
+        for (let k = 0; k < rows.length; k++) { rows[k].style.opacity = "1"; await wait(650); rows[k].querySelector("[data-t]").textContent = times[k]; }
+        const b = $("anRun"); if (b) { b.disabled = false; b.textContent = "↻ Run again"; }
+      });
+    }
+    if (s.viz === "levels") {
+      $("lvSeg").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+        level = b.textContent;
+        $("lvSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+        const p = $("lvText"); p.style.opacity = 0;
+        setTimeout(() => { p.textContent = LEVELS[level]; p.style.opacity = 1; }, reduce ? 0 : 150);
+        $("dLevel").textContent = level;
+      }));
+      $("lvText").style.transition = "opacity .15s";
+    }
+    if (s.viz === "audition") {
+      $("auSeg").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+        audition = b.dataset.a;
+        $("auSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+        animatePath($("spNow"), audition === "after" ? 0.4 : 3.4);
+      }));
+    }
+    if (s.viz === "apply") {
+      const render = () => {
+        $("apChain").innerHTML = `<span class="dev-chip"><i></i>Serum 2</span><span class="arrow">→</span>${applied ? `<span class="dev-chip new"><i></i>EQ Eight</span><span class="arrow">→</span>` : ""}<span class="dev-chip mine"><i></i>MixListener</span>`;
+        $("apBtn").textContent = applied ? "Revert" : "Apply";
+        $("apBtn").className = "btn-plain" + (applied ? "" : " accent");
+        $("apNote").textContent = applied ? "EQ Eight inserted, before the MixListener" : "Tested fix ready on Chords";
+      };
+      $("apBtn").addEventListener("click", () => { applied = !applied; render(); });
+      render();
+    }
+  }
+  let mudNow = 3.4, mudAnim = null;
+  function animatePath(el, to) {
+    cancelAnimationFrame(mudAnim);
+    const from = mudNow, t0 = performance.now(), dur = reduce ? 1 : 420;
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      mudNow = from + (to - from) * e;
+      el.setAttribute("d", spectrumPath(mudNow));
+      if (k < 1) mudAnim = requestAnimationFrame(step);
+    };
+    mudAnim = requestAnimationFrame(step);
+  }
+  document.querySelectorAll("#loopNav button").forEach((b) => b.addEventListener("click", () => { mudNow = audition === "after" ? 0.4 : 3.4; renderStep(+b.dataset.step); }));
+  renderStep(0);
+
+  /* ---------- song timeline (an example song, measured in Live) ---------- */
+  const BARS = 88;
+  const SECS = [["Intro", 1, 16, -11.0], ["Groove A", 17, 32, -9.6], ["Breakdown", 33, 40, -10.4], ["Drop", 41, 72, -9.3], ["Outro", 73, 88, -10.9]];
+  const TRACKS = [
+    ["Drums", "#f7a22c", [[1, 32], [37, 88]]],
+    ["Bass", "#9be15d", [[1, 32], [41, 88]]],
+    ["Chords", "#7fd17f", [[1, 88]]],
+    ["Lead", "#9d8cff", [[33, 40], [49, 72]]],
+    ["Vocal chop", "#e0a46a", [[33, 40]]],
+  ];
+  const pct = (bar) => ((bar - 1) / BARS) * 100;
+  const ruler = $("tlRuler");
+  for (let b = 1; b <= 89; b += 8) ruler.insertAdjacentHTML("beforeend", `<span style="left:${pct(b)}%">${b}</span>`);
+  $("tlSecs").innerHTML = SECS.map(([n, a, b]) => `<b style="left:${pct(a)}%;width:${pct(b + 1) - pct(a)}%">${n}</b>`).join("");
+  $("tlTracks").innerHTML = TRACKS.map(([n, c, clips]) => `<div class="tl-row"><span>${n}</span><div class="tl-lane">${clips.map(([a, b]) => `<b style="left:${pct(a)}%;width:calc(${pct(b + 1) - pct(a)}% - 2px);background:${c}"></b>`).join("")}</div></div>`).join("");
+  const energy = $("tlEnergy");
+  // Per-bar loudness around each section's measured value (a little movement inside sections).
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const barLufs = [];
+  for (let b = 1; b <= BARS; b++) {
+    const s = SECS.find(([, a, e]) => b >= a && b <= e);
+    const within = (b - s[1]) / (s[2] - s[1] + 1);
+    barLufs.push(s[3] + (rnd() - 0.5) * 0.8 + (s[0] === "Intro" ? within * 1.2 - 0.6 : 0));
+  }
+  for (let b = 0; b < BARS; b++) energy.appendChild(document.createElement("i"));
+  const eBars = [...energy.children];
+  const secTable = $("secTable");
+  function renderSecs(upto) {
+    secTable.innerHTML = SECS.map(([n, a, e, v]) => {
+      const done = upto >= e;
+      return `<div class="sec"><div class="nm">${n} · ${a}–${e}</div><div class="v ${done ? "" : "wait"}">${done ? v.toFixed(1) : "–"}<small>LUFS</small></div></div>`;
+    }).join("");
+  }
+  renderSecs(0);
+  const ph = $("playhead");
+  let songIv = null;
+  function placeHead(bar) {
+    const lane = energy.getBoundingClientRect(), tl = $("tl").getBoundingClientRect();
+    ph.style.left = (lane.left - tl.left + ((bar - 1) / BARS) * lane.width) + "px";
+  }
+  function resetSong() {
+    clearInterval(songIv);
+    eBars.forEach((e) => { e.style.height = "0"; e.classList.remove("lit"); });
+    ph.classList.remove("on");
+    renderSecs(0);
+    $("findings").innerHTML = "";
+    $("songPlay").disabled = false;
+    $("songPlay").textContent = "▶ Measure the song";
+    $("songMeta").textContent = "Example song · 88 bars · 140 BPM · 2:31";
+  }
+  $("songReset").addEventListener("click", resetSong);
+  $("songPlay").addEventListener("click", () => {
+    resetSong();
+    $("songPlay").disabled = true;
+    $("songPlay").textContent = "Measuring…";
+    ph.classList.add("on");
+    let bar = 1;
+    songIv = setInterval(() => {
+      placeHead(bar);
+      if (bar <= BARS) {
+        const e = eBars[bar - 1];
+        e.style.height = Math.max(4, ((barLufs[bar - 1] + 14) / 6) * 74) + "px";
+        e.classList.add("lit");
+        if (bar > 1) eBars[bar - 2].classList.remove("lit");
+        const secs = (bar - 1) * (240 / 140);
+        $("songMeta").textContent = `Bar ${bar} of 88 · ${Math.floor(secs / 60)}:${String(Math.floor(secs % 60)).padStart(2, "0")}`;
+        renderSecs(bar);
+      }
+      bar++;
+      if (bar > BARS + 1) {
+        clearInterval(songIv);
+        eBars.forEach((e) => e.classList.remove("lit"));
+        ph.classList.remove("on");
+        $("songMeta").textContent = "Finished a bar after the last clip · whole song -9.9 LUFS";
+        $("songPlay").disabled = false;
+        $("songPlay").textContent = "▶ Measure again";
+        const f = [["var(--accent)", "Flat energy: every section within 1.7 LU"], ["var(--accent)", "The Drop is only 0.3 LU louder than Groove A"], ["var(--accent)", "1:09 before \"Drop\""], ["var(--under)", "Peaks reach +4.3 dBFS at bar 9"]];
+        f.forEach(([c, t], k) => setTimeout(() => $("findings").insertAdjacentHTML("beforeend", `<span class="finding" ><i style="background:${c}"></i>${t}</span>`), reduce ? 0 : k * 140));
+      }
+    }, reduce ? 10 : 70);
+  });
+  addEventListener("resize", () => { if (ph.classList.contains("on")) placeHead(1); });
+
+  /* ---------- where devices go ---------- */
+  const sw = { tracks: false, limiter: false, applied: false };
+  const TR = [["Kick", "#f7a22c", ["Drum Rack"]], ["Bass", "#9be15d", ["Operator", "Saturator"]], ["Chords", "#7fd17f", ["Serum 2"]], ["Vocal", "#e0a46a", ["Simpler", "Compressor"]]];
+  function chip(name, cls = "") { return `<span class="dev-chip ${cls}"><i></i>${name}</span>`; }
+  function chainOf(list) { return `<div class="chain">${list.join('<span class="arrow">→</span>')}</div>`; }
+  function renderMixer() {
+    let html = TR.map(([n, c, devs]) => {
+      const list = devs.map((d) => chip(d));
+      if (sw.applied && n === "Chords" && sw.tracks) list.push(chip("EQ Eight", "new"));
+      if (sw.tracks) list.push(chip("MixListener", "mine new"));
+      return `<div class="chan"><span><i style="background:${c}"></i>${n}</span>${chainOf(list)}</div>`;
+    }).join("");
+    const m = [chip("Glue Compressor")];
+    if (sw.limiter) m.push(chip("MixListener", "mine new"));
+    if (sw.applied && !sw.tracks) m.push(chip("EQ Eight", "new"));
+    if (sw.limiter) m.push(chip("Limiter", "new"));
+    m.push(chip("MixAssistant", "mine"));
+    m.push(`<span class="dev-chip fader">Master fader 0.0 dB</span>`);
+    html += `<div class="chan master"><span><i style="background:var(--text)"></i>Master</span>${chainOf(m)}</div>`;
+    $("mixer").innerHTML = html;
+    let note = "<b>MixAssistant goes last on the Master</b>, so it measures what you export. Keep the Master fader at 0 dB.";
+    if (sw.tracks) note += " <b>A MixListener goes last on each track you care about.</b> Analyze then hears kick, bass, chords and vocal separately.";
+    if (sw.limiter) note += " <b>With a limiter, put a MixListener in front of it.</b> Loudness and peaks are still measured at the end, but fixes are tested on the mix before limiting.";
+    if (sw.applied) note += sw.tracks ? " <b>Apply puts a track fix on that track</b>, just before its MixListener." : (sw.limiter ? " <b>Apply puts a Master fix in front of the limiter</b>, just before that MixListener." : " <b>Apply puts a Master fix just before MixAssistant.</b>");
+    $("chainNote").innerHTML = note;
+  }
+  [["swTracks", "tracks"], ["swLimiter", "limiter"], ["swApplied", "applied"]].forEach(([id, k]) => $(id).addEventListener("click", (e) => {
+    sw[k] = !sw[k]; e.currentTarget.setAttribute("aria-pressed", sw[k]); renderMixer();
+  }));
+  renderMixer();
+
+  /* ---------- the meter ---------- */
+  let mGoal = "streaming";
+  const LO = -20, HI = -3;
+  const pos = (v) => ((v - LO) / (HI - LO)) * 100;
+  function renderMeter() {
+    const i = +$("mRange").value;
+    const target = TARGET[mGoal];
+    const d = i - target;
+    const v = verdictOf(d, i, mGoal);
+    $("mNum").innerHTML = `${i.toFixed(1)}<small>LUFS</small>`;
+    const dot = $("mDot");
+    dot.className = "verdict " + v;
+    dot.textContent = GLYPH[v];
+    $("mText").innerHTML = `<span class="delta ${v}">${fmt(d)} LU</span>${TITLES[mGoal][v]}.`;
+    // Zones: under | ok | over | hot
+    const hotFrom = mGoal === "streaming" ? Math.max(target + 1, -9) : target + 3;
+    const z = [[LO, target - 1, "var(--under)"], [target - 1, target + 1, "var(--ok)"], [target + 1, hotFrom, "var(--accent)"], [hotFrom, HI, "var(--hot)"]];
+    $("mBar").innerHTML = z.map(([a, b, c]) => `<span style="width:${Math.max(0, pos(Math.min(b, HI)) - pos(Math.max(a, LO)))}%;background:${c};opacity:.85"></span>`).join("");
+    $("mMarker").style.left = pos(i) + "%";
+    $("mTarget").style.left = pos(target) + "%";
+    const sc = $("mScale");
+    sc.querySelectorAll(".tick").forEach((t) => t.remove());
+    [-18, -14, -9, -7, -4].forEach((tv) => sc.insertAdjacentHTML("beforeend", `<span class="tick" style="left:${pos(tv)}%">${tv}</span>`));
+  }
+  $("mRange").addEventListener("input", renderMeter);
+  $("mGoal").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    mGoal = b.dataset.goal;
+    $("mGoal").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    renderMeter();
+  }));
+  renderMeter();
+})();
+</script>
+</body>
+</html>
