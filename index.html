@@ -481,7 +481,7 @@ footer .wrap { padding-block: 26px; display: flex; flex-wrap: wrap; gap: 8px 24p
         <article class="step">
           <span class="n">Step 2</span>
           <h3>Drop MixAssistant on the Master</h3>
-          <p>Make it the <b>last</b> device on the Master track. Then choose where the track is going, <b>Streaming</b> or <b>Club</b>. That sets the loudness target and is remembered for this project.</p>
+          <p>Make it the <b>last</b> device on the Master track. Then choose where the track is going: <b>Streaming</b>, <b>Club</b>, or <b>Master</b> when a mastering engineer takes it from here (then it checks headroom instead of loudness). That's remembered for this project.</p>
           <div class="path"><span>Master</span><span>… your devices</span><span class="end">MixAssistant</span></div>
         </article>
         <article class="step">
@@ -899,7 +899,7 @@ footer .wrap { padding-block: 26px; display: flex; flex-wrap: wrap; gap: 8px 24p
   const STEPS = [
     { h: "Play the part that matters", p: "Play the loudest or most important part of your track, usually the drop or chorus, for at least 10 seconds. The device keeps listening to the last 30 seconds of your Master.", note: "Tip: loop the drop while you work.", viz: "play" },
     { h: "Press Analyze", p: "The assistant measures the last 30 seconds, tries possible fixes on a copy of the audio, and explains what to change first. It takes about 30–70 seconds and costs under a cent.", note: "Measuring and testing run on your computer. Only the numbers go to the AI.", viz: "analyze" },
-    { h: "Read it at your level", p: "The same finding reads differently for a beginner and for an engineer. Pick your level under ☰ in the device, or at the top of the chat window. Ask follow-up questions in the chat.", note: "Every claim points back to a measured number.", viz: "levels" },
+    { h: "Read it at your level", p: "The same finding reads differently for a beginner and for an engineer. Pick your level under ☰ in the device, or at the top of the chat window. Ask follow-up questions in the chat.", note: "Or choose Numbers only: the measurements and tested fixes, no AI, free.", viz: "levels" },
     { h: "Listen before you decide", p: "On a tested fix, Before and After play a loudness-matched copy, so you judge the change and not the volume. Live goes back to your mix.", note: "Numbers don't replace your ears.", viz: "audition" },
     { h: "Apply, or revert", p: "Apply inserts ordinary Ableton devices with the tested settings. Master fixes go on the Master just before MixAssistant; track fixes go on that track, just before its MixListener. Tweak them afterwards, or press Revert to remove them.", note: "Nothing changes in your set until you press Apply.", viz: "apply" },
   ];
